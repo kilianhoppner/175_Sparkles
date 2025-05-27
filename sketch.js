@@ -1,3 +1,9 @@
+// === Constants ===
+const SPARKLE_SPEED = 0.03;
+const SPARKLE_AMPLITUDE = 6;
+const OPACITY_SPEED = 0.06;
+
+// === Layout ===
 const layout = [
   [0,0,0,1,1,0,0,   1,1,1,1,1,1,1,   0,1,1,1,1,1,1],
   [0,1,2,3,3,0,0,   2,3,3,3,3,3,2,   1,3,3,3,3,3,3],
@@ -14,7 +20,8 @@ const layout = [
 let spacing = 30;
 let baseSizes = [0, 5, 19, 22];
 
-let bgColor = '#FFFFFF';
+// === Colors ===
+let bgColor = '#040066';
 let plusColor = '#0000FF';
 
 const colors = [
@@ -26,22 +33,19 @@ let swatchButtonBg, swatchButtonPlus;
 let swatchMenuBg, swatchMenuPlus;
 let swatchElementsBg = [];
 let swatchElementsPlus = [];
-let selectedColorBg = '#FFFFFF';
+let selectedColorBg = '#040066';
 let selectedColorPlus = '#0000FF';
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   noStroke();
   rectMode(CENTER);
-
   createColorSwatch('bg', 20, 20);
   createColorSwatch('plus', 20, 70);
 }
 
 function draw() {
   background(bgColor);
-  fill(plusColor);
-
   let cols = layout[0].length;
   let rows = layout.length;
   let layoutWidth = cols * spacing;
@@ -55,24 +59,36 @@ function draw() {
       if (value === 0) continue;
 
       let baseSize = baseSizes[value];
-      let sparkle = sin(frameCount * 0.033 + row + col) * 6;
+      let sparkle = sin(frameCount * SPARKLE_SPEED + row + col) * SPARKLE_AMPLITUDE;
       let size = baseSize + sparkle;
 
+      let alpha = map(sin(frameCount * OPACITY_SPEED + row * 0.5 + col * 0.5), -1, 1, 100, 255);
       let x = col * spacing + xOffset;
       let y = row * spacing + yOffset;
 
-      drawPlus(x, y, size);
+      drawPlus(x, y, size, alpha);
     }
   }
 }
 
-function drawPlus(x, y, s) {
+function drawPlus(x, y, s, a) {
   let unit = s / 5;
-  let thickness = unit;
-  let length = unit * 5;
+  fill(red(plusColor), green(plusColor), blue(plusColor), a);
 
-  rect(x, y, thickness, length); // Vertical bar
-  rect(x, y, length, thickness); // Horizontal bar
+  beginShape();
+  vertex(x - 2.5 * unit, y - 0.5 * unit);
+  vertex(x - 0.5 * unit, y - 0.5 * unit);
+  vertex(x - 0.5 * unit, y - 2.5 * unit);
+  vertex(x + 0.5 * unit, y - 2.5 * unit);
+  vertex(x + 0.5 * unit, y - 0.5 * unit);
+  vertex(x + 2.5 * unit, y - 0.5 * unit);
+  vertex(x + 2.5 * unit, y + 0.5 * unit);
+  vertex(x + 0.5 * unit, y + 0.5 * unit);
+  vertex(x + 0.5 * unit, y + 2.5 * unit);
+  vertex(x - 0.5 * unit, y + 2.5 * unit);
+  vertex(x - 0.5 * unit, y + 0.5 * unit);
+  vertex(x - 2.5 * unit, y + 0.5 * unit);
+  endShape(CLOSE);
 }
 
 function createColorSwatch(type, posX, posY) {
@@ -183,12 +199,12 @@ function exportToSVG() {
   let rows = layout.length;
   let layoutWidth = cols * spacing;
   let layoutHeight = rows * spacing;
-  let xOffset = (width - layoutWidth) / 2;
-  let yOffset = (height - layoutHeight) / 2;
+  let xOffset = (windowWidth - layoutWidth) / 2;
+  let yOffset = (windowHeight - layoutHeight) / 2;
 
   svg.push('<?xml version="1.0" encoding="UTF-8" standalone="no"?>');
-  svg.push(`<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${width}" height="${height}">`);
-  svg.push(`<rect width="${width}" height="${height}" fill="${bgColor}" />`);
+  svg.push(`<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${windowWidth}" height="${windowHeight}">`);
+  svg.push(`<rect width="${windowWidth}" height="${windowHeight}" fill="${bgColor}" />`);
 
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
@@ -196,20 +212,33 @@ function exportToSVG() {
       if (value === 0) continue;
 
       let baseSize = baseSizes[value];
-      let sparkle = sin(frameCount * 0.033 + row + col) * 6;
+      let sparkle = sin(frameCount * SPARKLE_SPEED + row + col) * SPARKLE_AMPLITUDE;
       let size = baseSize + sparkle;
+
+      let alpha = map(sin(frameCount * OPACITY_SPEED + row * 0.5 + col * 0.5), -1, 1, 100, 255);
+      let fillOpacity = (alpha / 255).toFixed(3);
 
       let x = col * spacing + xOffset;
       let y = row * spacing + yOffset;
-
       let unit = size / 5;
-      let barThickness = unit;
-      let barLength = unit * 5;
 
-      // Vertical bar
-      svg.push(`<rect x="${x - barThickness / 2}" y="${y - barLength / 2}" width="${barThickness}" height="${barLength}" fill="${plusColor}" />`);
-      // Horizontal bar
-      svg.push(`<rect x="${x - barLength / 2}" y="${y - barThickness / 2}" width="${barLength}" height="${barThickness}" fill="${plusColor}" />`);
+      let d = `
+        M ${x - 2.5 * unit} ${y - 0.5 * unit}
+        L ${x - 0.5 * unit} ${y - 0.5 * unit}
+        L ${x - 0.5 * unit} ${y - 2.5 * unit}
+        L ${x + 0.5 * unit} ${y - 2.5 * unit}
+        L ${x + 0.5 * unit} ${y - 0.5 * unit}
+        L ${x + 2.5 * unit} ${y - 0.5 * unit}
+        L ${x + 2.5 * unit} ${y + 0.5 * unit}
+        L ${x + 0.5 * unit} ${y + 0.5 * unit}
+        L ${x + 0.5 * unit} ${y + 2.5 * unit}
+        L ${x - 0.5 * unit} ${y + 2.5 * unit}
+        L ${x - 0.5 * unit} ${y + 0.5 * unit}
+        L ${x - 2.5 * unit} ${y + 0.5 * unit}
+        Z
+      `.trim();
+
+      svg.push(`<path d="${d}" fill="${plusColor}" fill-opacity="${fillOpacity}" />`);
     }
   }
 
