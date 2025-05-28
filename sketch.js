@@ -250,5 +250,99 @@ function keyPressed() {
 }
 
 function exportToSVG() {
-  // Export logic remains unchanged; sparkles are not included in SVG
+  let svg = [];
+
+  let cols = layout[0].length;
+  let rows = layout.length;
+  let layoutWidth = cols * SPACING;
+  let layoutHeight = rows * SPACING;
+  let xOffset = (windowWidth - layoutWidth) / 2;
+  let yOffset = (windowHeight - layoutHeight) / 2;
+
+  svg.push('<?xml version="1.0" encoding="UTF-8" standalone="no"?>');
+  svg.push(`<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${windowWidth}" height="${windowHeight}">`);
+  svg.push(`<rect width="${windowWidth}" height="${windowHeight}" fill="${bgColor}" />`);
+
+  // === Grid Pluses ===
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      let value = layout[row][col];
+      if (value === 0) continue;
+
+      let baseSize = BASE_SIZES[value];
+      let sparkle = sin(frameCount * SPARKLE_SPEED + row + col) * SPARKLE_AMPLITUDE;
+      let size = baseSize + sparkle;
+
+      let alpha = map(
+        sin(frameCount * OPACITY_SPEED + (row + col) * GLOW_OFFSET_MULTIPLIER),
+        -1, 1, OPACITY_MIN, OPACITY_MAX
+      );
+      let fillOpacity = (alpha / 255).toFixed(3);
+
+      let x = col * SPACING + xOffset;
+      let y = row * SPACING + yOffset;
+      let unit = size / 5;
+
+      let d = `
+        M ${x - 2.5 * unit} ${y - 0.5 * unit}
+        L ${x - 0.5 * unit} ${y - 0.5 * unit}
+        L ${x - 0.5 * unit} ${y - 2.5 * unit}
+        L ${x + 0.5 * unit} ${y - 2.5 * unit}
+        L ${x + 0.5 * unit} ${y - 0.5 * unit}
+        L ${x + 2.5 * unit} ${y - 0.5 * unit}
+        L ${x + 2.5 * unit} ${y + 0.5 * unit}
+        L ${x + 0.5 * unit} ${y + 0.5 * unit}
+        L ${x + 0.5 * unit} ${y + 2.5 * unit}
+        L ${x - 0.5 * unit} ${y + 2.5 * unit}
+        L ${x - 0.5 * unit} ${y + 0.5 * unit}
+        L ${x - 2.5 * unit} ${y + 0.5 * unit}
+        Z
+      `.trim();
+
+      svg.push(`<path d="${d}" fill="${plusColor}" fill-opacity="${fillOpacity}" />`);
+    }
+  }
+
+  // === Sparkle Pluses ===
+  for (let s of sparkles) {
+    let flicker = sin(s.phase - HALF_PI);
+    let alpha = map(flicker, -1, 1, SPARKLE_OPACITY_MIN, SPARKLE_OPACITY_MAX);
+    let fillOpacity = (alpha / 255).toFixed(3);
+    let size = s.size;
+    let unit = size / 5;
+    let x = s.x;
+    let y = s.y;
+
+    let d = `
+      M ${x - 2.5 * unit} ${y - 0.5 * unit}
+      L ${x - 0.5 * unit} ${y - 0.5 * unit}
+      L ${x - 0.5 * unit} ${y - 2.5 * unit}
+      L ${x + 0.5 * unit} ${y - 2.5 * unit}
+      L ${x + 0.5 * unit} ${y - 0.5 * unit}
+      L ${x + 2.5 * unit} ${y - 0.5 * unit}
+      L ${x + 2.5 * unit} ${y + 0.5 * unit}
+      L ${x + 0.5 * unit} ${y + 0.5 * unit}
+      L ${x + 0.5 * unit} ${y + 2.5 * unit}
+      L ${x - 0.5 * unit} ${y + 2.5 * unit}
+      L ${x - 0.5 * unit} ${y + 0.5 * unit}
+      L ${x - 2.5 * unit} ${y + 0.5 * unit}
+      Z
+    `.trim();
+
+    svg.push(`<path d="${d}" fill="${plusColor}" fill-opacity="${fillOpacity}" />`);
+  }
+
+  svg.push('</svg>');
+
+  let blob = new Blob([svg.join('\n')], { type: "image/svg+xml" });
+  let url = URL.createObjectURL(blob);
+
+  let link = document.createElement('a');
+  link.href = url;
+  link.download = 'layout_export.svg';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }
