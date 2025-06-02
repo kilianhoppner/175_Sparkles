@@ -277,6 +277,7 @@ function exportToSVG() {
   svg.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${windowWidth}" height="${windowHeight}">`);
   svg.push(`<rect width="100%" height="100%" fill="${bgColor}" />`);
 
+  // === Static layout export ===
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       let value = layout[row][col];
@@ -285,7 +286,10 @@ function exportToSVG() {
       let baseSize = BASE_SIZES[value];
       let sparkle = sin(frameCount * SPARKLE_SPEED + row + col) * SPARKLE_AMPLITUDE;
       let size = baseSize + sparkle;
-      let alpha = map(sin(frameCount * OPACITY_SPEED + (row + col) * GLOW_OFFSET_MULTIPLIER), -1, 1, OPACITY_MIN, OPACITY_MAX);
+      let alpha = map(
+        sin(frameCount * OPACITY_SPEED + (row + col) * GLOW_OFFSET_MULTIPLIER),
+        -1, 1, OPACITY_MIN, OPACITY_MAX
+      );
       let fillOpacity = (alpha / 255).toFixed(3);
       let x = col * SPACING + xOffset;
       let y = row * SPACING + yOffset;
@@ -295,16 +299,19 @@ function exportToSVG() {
     }
   }
 
-  for (let s of sparkles) {
-    let flicker = sin(s.phase - HALF_PI);
-    let alpha = map(flicker, -1, 1, SPARKLE_OPACITY_MIN, SPARKLE_OPACITY_MAX);
-    let fillOpacity = (alpha / 255).toFixed(3);
-    let size = s.size;
-    let unit = size / 5;
-    let x = s.x;
-    let y = s.y;
+  // === Conditional sparkle export ===
+  if (showSparkles) {
+    for (let s of sparkles) {
+      let flicker = sin(s.phase - HALF_PI);
+      let alpha = map(flicker, -1, 1, SPARKLE_OPACITY_MIN, SPARKLE_OPACITY_MAX);
+      let fillOpacity = (alpha / 255).toFixed(3);
+      let size = s.size;
+      let unit = size / 5;
+      let x = s.x;
+      let y = s.y;
 
-    svg.push(`<path d="M ${x - 2.5 * unit} ${y - 0.5 * unit} L ${x - 0.5 * unit} ${y - 0.5 * unit} L ${x - 0.5 * unit} ${y - 2.5 * unit} L ${x + 0.5 * unit} ${y - 2.5 * unit} L ${x + 0.5 * unit} ${y - 0.5 * unit} L ${x + 2.5 * unit} ${y - 0.5 * unit} L ${x + 2.5 * unit} ${y + 0.5 * unit} L ${x + 0.5 * unit} ${y + 0.5 * unit} L ${x + 0.5 * unit} ${y + 2.5 * unit} L ${x - 0.5 * unit} ${y + 2.5 * unit} L ${x - 0.5 * unit} ${y + 0.5 * unit} L ${x - 2.5 * unit} ${y + 0.5 * unit} Z" fill="${plusColor}" fill-opacity="${fillOpacity}" />`);
+      svg.push(`<path d="M ${x - 2.5 * unit} ${y - 0.5 * unit} L ${x - 0.5 * unit} ${y - 0.5 * unit} L ${x - 0.5 * unit} ${y - 2.5 * unit} L ${x + 0.5 * unit} ${y - 2.5 * unit} L ${x + 0.5 * unit} ${y - 0.5 * unit} L ${x + 2.5 * unit} ${y - 0.5 * unit} L ${x + 2.5 * unit} ${y + 0.5 * unit} L ${x + 0.5 * unit} ${y + 0.5 * unit} L ${x + 0.5 * unit} ${y + 2.5 * unit} L ${x - 0.5 * unit} ${y + 2.5 * unit} L ${x - 0.5 * unit} ${y + 0.5 * unit} L ${x - 2.5 * unit} ${y + 0.5 * unit} Z" fill="${plusColor}" fill-opacity="${fillOpacity}" />`);
+    }
   }
 
   svg.push('</svg>');
