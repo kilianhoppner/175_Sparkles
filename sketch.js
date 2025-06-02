@@ -104,14 +104,14 @@ svgButton.style('font-size', '14px'); // Same font size
 svgButton.mousePressed(exportToSVG);
 svgButton.mouseOver(() => svgButton.style('border', '2px solid red'));
 svgButton.mouseOut(() => svgButton.style('border', '2px solid #333'));
-svgButton.position(SWATCH_POS_X_PLUS + 175, SWATCH_POS_Y);
+svgButton.position(sparkleToggle.x + sparkleToggle.width + 30, sparkleToggle.y);
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  svgButton.position(SWATCH_POS_X_PLUS + 150, SWATCH_POS_Y);
+  sparkleToggle.position(SWATCH_POS_X_PLUS + 50, SWATCH_POS_Y);
+  svgButton.position(sparkleToggle.x + sparkleToggle.width + 30, sparkleToggle.y);
 }
-
 function draw() {
   background(bgColor);
   let cols = layout[0].length;
