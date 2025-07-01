@@ -1,8 +1,8 @@
 // === Constants ===
-const SPARKLE_SPEED = 0.04;
+const SPARKLE_SPEED = 0.03;
 const SPARKLE_AMPLITUDE = 4;
-const OPACITY_SPEED = 0.08;
-const OPACITY_MIN = 190;
+const OPACITY_SPEED = 0.03;
+const OPACITY_MIN = 200;
 const OPACITY_MAX = 255;
 const GLOW_OFFSET_MULTIPLIER = 5;
 
@@ -19,6 +19,15 @@ const SPARKLE_RADIUS_MAX = 300;
 const SPARKLE_OPACITY_MIN = 50;
 const SPARKLE_OPACITY_MAX = 200;
 const SPARKLE_FLOAT_SPEED = 0.05;
+
+// === Local wobble effect per plus sign ===
+const WAVE_AMP = 0.1;
+
+// === Global grid wave parameters ===
+const LARGE_WAVE_AMPLITUDE = 2;
+const LARGE_WAVE_FREQUENCY = 4;
+const LARGE_WAVE_RIPPLE_DENSITY = 0.0025; // Controls how many ripples span across the grid
+const LARGE_WAVE_SPEED = 0.025;
 
 // === Layout ===
 const layout = [
@@ -71,40 +80,40 @@ function setup() {
     sparkles.push(generateSparkle(true));
   }
 
- // === Sparkle Toggle Button ===
-sparkleToggle = createButton('Sparkles: ON');
-sparkleToggle.style('padding', '6px 12px');
-sparkleToggle.style('background', '#fff');
-sparkleToggle.style('border', '2px solid #333');
-sparkleToggle.style('border-radius', '40px');
-sparkleToggle.style('cursor', 'pointer');
-sparkleToggle.style('display', 'flex');
-sparkleToggle.style('align-items', 'center');
-sparkleToggle.style('justify-content', 'center');
-sparkleToggle.style('font-size', '14px'); // Explicit font size for consistency
-sparkleToggle.position(SWATCH_POS_X_PLUS + 50, SWATCH_POS_Y);
-sparkleToggle.mousePressed(() => {
-  showSparkles = !showSparkles;
-  sparkleToggle.html(showSparkles ? 'Sparkles: ON' : 'Sparkles: OFF');
-});
-sparkleToggle.mouseOver(() => sparkleToggle.style('border', '2px solid red'));
-sparkleToggle.mouseOut(() => sparkleToggle.style('border', '2px solid #333'));
+  // === Sparkle Toggle Button ===
+  sparkleToggle = createButton('Sparkles: ON');
+  sparkleToggle.style('padding', '6px 12px');
+  sparkleToggle.style('background', '#fff');
+  sparkleToggle.style('border', '2px solid #333');
+  sparkleToggle.style('border-radius', '40px');
+  sparkleToggle.style('cursor', 'pointer');
+  sparkleToggle.style('display', 'flex');
+  sparkleToggle.style('align-items', 'center');
+  sparkleToggle.style('justify-content', 'center');
+  sparkleToggle.style('font-size', '14px');
+  sparkleToggle.position(SWATCH_POS_X_PLUS + 50, SWATCH_POS_Y);
+  sparkleToggle.mousePressed(() => {
+    showSparkles = !showSparkles;
+    sparkleToggle.html(showSparkles ? 'Sparkles: ON' : 'Sparkles: OFF');
+  });
+  sparkleToggle.mouseOver(() => sparkleToggle.style('border', '2px solid red'));
+  sparkleToggle.mouseOut(() => sparkleToggle.style('border', '2px solid #333'));
 
-// === SVG Export Button ===
-svgButton = createButton('SVG');
-svgButton.style('padding', '6px 12px'); // Match sparkle button padding
-svgButton.style('background', '#fff');
-svgButton.style('border', '2px solid #333');
-svgButton.style('border-radius', '40px');
-svgButton.style('cursor', 'pointer');
-svgButton.style('display', 'flex');
-svgButton.style('align-items', 'center');
-svgButton.style('justify-content', 'center');
-svgButton.style('font-size', '14px'); // Same font size
-svgButton.mousePressed(exportToSVG);
-svgButton.mouseOver(() => svgButton.style('border', '2px solid red'));
-svgButton.mouseOut(() => svgButton.style('border', '2px solid #333'));
-svgButton.position(sparkleToggle.x + sparkleToggle.width + 30, sparkleToggle.y);
+  // === SVG Export Button ===
+  svgButton = createButton('SVG');
+  svgButton.style('padding', '6px 12px');
+  svgButton.style('background', '#fff');
+  svgButton.style('border', '2px solid #333');
+  svgButton.style('border-radius', '40px');
+  svgButton.style('cursor', 'pointer');
+  svgButton.style('display', 'flex');
+  svgButton.style('align-items', 'center');
+  svgButton.style('justify-content', 'center');
+  svgButton.style('font-size', '14px');
+  svgButton.mousePressed(exportToSVG);
+  svgButton.mouseOver(() => svgButton.style('border', '2px solid red'));
+  svgButton.mouseOut(() => svgButton.style('border', '2px solid #333'));
+  svgButton.position(sparkleToggle.x + sparkleToggle.width + 30, sparkleToggle.y);
 }
 
 function windowResized() {
@@ -112,6 +121,7 @@ function windowResized() {
   sparkleToggle.position(SWATCH_POS_X_PLUS + 50, SWATCH_POS_Y);
   svgButton.position(sparkleToggle.x + sparkleToggle.width + 30, sparkleToggle.y);
 }
+
 function draw() {
   background(bgColor);
   let cols = layout[0].length;
@@ -125,12 +135,27 @@ function draw() {
     for (let col = 0; col < cols; col++) {
       let value = layout[row][col];
       if (value === 0) continue;
+
       let baseSize = BASE_SIZES[value];
-      let sparkle = sin(frameCount * SPARKLE_SPEED + row + col) * SPARKLE_AMPLITUDE;
+      let sparklePhase = frameCount * SPARKLE_SPEED + row + col;
+      let sparkle = sin(sparklePhase) * SPARKLE_AMPLITUDE;
       let size = baseSize + sparkle;
-      let alpha = map(sin(frameCount * OPACITY_SPEED + (row + col) * GLOW_OFFSET_MULTIPLIER), -1, 1, OPACITY_MIN, OPACITY_MAX);
+      let alpha = map(
+        sin(frameCount * OPACITY_SPEED + (row + col) * GLOW_OFFSET_MULTIPLIER),
+        -1, 1, OPACITY_MIN, OPACITY_MAX
+      );
+
       let x = col * SPACING + xOffset;
       let y = row * SPACING + yOffset;
+
+      // === Large unified wave traveling diagonally ===
+      let diagonalCoord = (x + y) * LARGE_WAVE_FREQUENCY * LARGE_WAVE_RIPPLE_DENSITY;
+      let globalWave = sin(diagonalCoord + frameCount * LARGE_WAVE_SPEED) * LARGE_WAVE_AMPLITUDE;
+
+      // === Apply wave and optional local wobble ===
+      x += sin(sparklePhase) * WAVE_AMP;
+      y += cos(sparklePhase) * WAVE_AMP + globalWave;
+
       drawPlus(x, y, size, alpha);
     }
   }
