@@ -309,16 +309,29 @@ function exportToSVG() {
       if (value === 0) continue;
 
       let baseSize = BASE_SIZES[value];
-      let sparkle = sin(frameCount * SPARKLE_SPEED + row + col) * SPARKLE_AMPLITUDE;
+      let sparklePhase = frameCount * SPARKLE_SPEED + row + col;
+      let sparkle = sin(sparklePhase) * SPARKLE_AMPLITUDE;
       let size = baseSize + sparkle;
+
+      // Opacity based on a sine wave for the glow effect
       let alpha = map(
         sin(frameCount * OPACITY_SPEED + (row + col) * GLOW_OFFSET_MULTIPLIER),
         -1, 1, OPACITY_MIN, OPACITY_MAX
       );
-      let fillOpacity = (alpha / 255).toFixed(3);
+
       let x = col * SPACING + xOffset;
       let y = row * SPACING + yOffset;
+
+      // === Large unified wave traveling diagonally ===
+      let diagonalCoord = (x + y) * LARGE_WAVE_FREQUENCY * LARGE_WAVE_RIPPLE_DENSITY;
+      let globalWave = sin(diagonalCoord + frameCount * LARGE_WAVE_SPEED) * LARGE_WAVE_AMPLITUDE;
+
+      // === Apply wave and optional local wobble ===
+      x += sin(sparklePhase) * WAVE_AMP;
+      y += cos(sparklePhase) * WAVE_AMP + globalWave;
+
       let unit = size / 5;
+      let fillOpacity = (alpha / 255).toFixed(3);
 
       svg.push(`<path d="M ${x - 2.5 * unit} ${y - 0.5 * unit} L ${x - 0.5 * unit} ${y - 0.5 * unit} L ${x - 0.5 * unit} ${y - 2.5 * unit} L ${x + 0.5 * unit} ${y - 2.5 * unit} L ${x + 0.5 * unit} ${y - 0.5 * unit} L ${x + 2.5 * unit} ${y - 0.5 * unit} L ${x + 2.5 * unit} ${y + 0.5 * unit} L ${x + 0.5 * unit} ${y + 0.5 * unit} L ${x + 0.5 * unit} ${y + 2.5 * unit} L ${x - 0.5 * unit} ${y + 2.5 * unit} L ${x - 0.5 * unit} ${y + 0.5 * unit} L ${x - 2.5 * unit} ${y + 0.5 * unit} Z" fill="${plusColor}" fill-opacity="${fillOpacity}" />`);
     }
